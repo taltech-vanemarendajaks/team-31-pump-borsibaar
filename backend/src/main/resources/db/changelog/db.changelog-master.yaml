@@ -1,0 +1,991 @@
+databaseChangeLog:
+  - changeSet:
+      id: 000-enable-citext
+      author: kris
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: CREATE EXTENSION IF NOT EXISTS citext;
+
+  - changeSet:
+      id: 001-create-organizations
+      author: kris
+      changes:
+        - createTable:
+            tableName: organizations
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_organizations
+              - column:
+                  name: name
+                  type: CITEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: CURRENT_TIMESTAMP
+        - createIndex:
+            tableName: organizations
+            indexName: idx_organizations_name
+            columns:
+              - column:
+                  name: name
+
+  - changeSet:
+      id: 002-create-roles
+      author: arto
+      changes:
+        - createTable:
+            tableName: roles
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_roles
+              - column:
+                  name: name
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+
+  - changeSet:
+      id: 003-create-users
+      author: arto
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_users
+              - column:
+                  name: organization_id
+                  type: BIGINT
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  name: email
+                  type: CITEXT
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: role_id
+                  type: BIGINT
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: CURRENT_TIMESTAMP
+
+  - changeSet:
+      id: 004-add-users-fks
+      author: arto
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: users
+            baseColumnNames: role_id
+            constraintName: fk_users_roles
+            referencedTableName: roles
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            baseTableName: users
+            baseColumnNames: organization_id
+            constraintName: fk_users_org
+            referencedTableName: organizations
+            referencedColumnNames: id
+
+  - changeSet:
+      id: 005-insert-roles
+      author: arto
+      changes:
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: USER
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: ADMIN
+
+  - changeSet:
+      id: 008-insert-default-organizations
+      author: system
+      changes:
+        - insert:
+            tableName: organizations
+            columns:
+              - column:
+                  name: id
+                  value: "1"
+              - column:
+                  name: name
+                  value: Default Organization
+        - insert:
+            tableName: organizations
+            columns:
+              - column:
+                  name: id
+                  value: "2"
+              - column:
+                  name: name
+                  value: TalTech ITÜK
+        - insert:
+            tableName: organizations
+            columns:
+              - column:
+                  name: id
+                  value: "3"
+              - column:
+                  name: name
+                  value: University of Tartu
+
+  - changeSet:
+      id: 006-create-categories
+      author: kris
+      changes:
+        - createTable:
+            tableName: categories
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_categories
+              - column:
+                  name: organization_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: CITEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: dynamic_pricing
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: categories
+            baseColumnNames: organization_id
+            constraintName: fk_categories_org
+            referencedTableName: organizations
+            referencedColumnNames: id
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+        - addUniqueConstraint:
+            tableName: categories
+            columnNames: organization_id, name
+            constraintName: uk_categories_org_name
+        - createIndex:
+            tableName: categories
+            indexName: idx_categories_org
+            columns:
+              - column:
+                  name: organization_id
+
+  - changeSet:
+      id: 007-create-products
+      author: kris
+      changes:
+        - createTable:
+            tableName: products
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_products
+              - column:
+                  name: organization_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: category_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: CITEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(1000)
+              - column:
+                  name: base_price
+                  type: DECIMAL(19,4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: min_price
+                  type: DECIMAL(19,4)
+              - column:
+                  name: max_price
+                  type: DECIMAL(19,4)
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: CURRENT_TIMESTAMP
+        - addForeignKeyConstraint:
+            baseTableName: products
+            baseColumnNames: organization_id
+            constraintName: fk_products_org
+            referencedTableName: organizations
+            referencedColumnNames: id
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: products
+            baseColumnNames: category_id
+            constraintName: fk_products_category
+            referencedTableName: categories
+            referencedColumnNames: id
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+        - addUniqueConstraint:
+            tableName: products
+            columnNames: organization_id, name
+            constraintName: uk_products_org_name
+        - createIndex:
+            tableName: products
+            indexName: idx_products_org
+            columns:
+              - column:
+                  name: organization_id
+        - createIndex:
+            tableName: products
+            indexName: idx_products_category
+            columns:
+              - column:
+                  name: category_id
+
+  - changeSet:
+      id: 008-create-inventory
+      author: arto
+      changes:
+        - createTable:
+            tableName: inventory
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_inventory
+              - column:
+                  name: organization_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity
+                  type: DECIMAL(19,4)
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: CURRENT_TIMESTAMP
+        - addForeignKeyConstraint:
+            baseTableName: inventory
+            baseColumnNames: organization_id
+            constraintName: fk_inventory_org
+            referencedTableName: organizations
+            referencedColumnNames: id
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: inventory
+            baseColumnNames: product_id
+            constraintName: fk_inventory_product
+            referencedTableName: products
+            referencedColumnNames: id
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+        - addUniqueConstraint:
+            tableName: inventory
+            columnNames: organization_id, product_id
+            constraintName: uk_inventory_org_product
+        - createIndex:
+            tableName: inventory
+            indexName: idx_inventory_org
+            columns:
+              - column:
+                  name: organization_id
+        - createIndex:
+            tableName: inventory
+            indexName: idx_inventory_product
+            columns:
+              - column:
+                  name: product_id
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE inventory ADD CONSTRAINT chk_inventory_quantity_non_negative CHECK (quantity >= 0);
+
+  - changeSet:
+      id: 009-create-inventory-transactions
+      author: arto
+      changes:
+        - createTable:
+            tableName: inventory_transactions
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_inventory_transactions
+              - column:
+                  name: inventory_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: transaction_type
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity_change
+                  type: DECIMAL(19,4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity_before
+                  type: DECIMAL(19,4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity_after
+                  type: DECIMAL(19,4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reference_id
+                  type: VARCHAR(100)
+              - column:
+                  name: notes
+                  type: VARCHAR(500)
+              - column:
+                  name: created_by
+                  type: UUID
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: CURRENT_TIMESTAMP
+        - addForeignKeyConstraint:
+            baseTableName: inventory_transactions
+            baseColumnNames: inventory_id
+            constraintName: fk_inventory_trans_inventory
+            referencedTableName: inventory
+            referencedColumnNames: id
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: inventory_transactions
+            baseColumnNames: created_by
+            constraintName: fk_inventory_trans_user
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: SET NULL
+            onUpdate: RESTRICT
+        - createIndex:
+            tableName: inventory_transactions
+            indexName: idx_inventory_trans_inventory
+            columns:
+              - column:
+                  name: inventory_id
+        - createIndex:
+            tableName: inventory_transactions
+            indexName: idx_inventory_trans_created_at
+            columns:
+              - column:
+                  name: created_at
+        - createIndex:
+            tableName: inventory_transactions
+            indexName: idx_inventory_trans_type
+            columns:
+              - column:
+                  name: transaction_type
+        - sql:
+            dbms: postgresql
+            sql: ALTER TABLE inventory_transactions ADD CONSTRAINT chk_inventory_trans_type CHECK (transaction_type IN ('SALE', 'PURCHASE', 'ADJUSTMENT', 'RETURN', 'TRANSFER_IN', 'TRANSFER_OUT', 'INITIAL'));
+
+  - changeSet:
+      id: 010-seed-bar-inventory
+      author: fred
+      preconditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM categories WHERE organization_id = 2 AND name = 'Kokteilid'
+      changes:
+        # Kategooriad TalTech ITÜKi jaoks
+        - insert:
+            tableName: categories
+            columns:
+              - column:
+                  name: organization_id
+                  value: "2"
+              - column:
+                  name: name
+                  value: Kokteilid
+              - column:
+                  name: dynamic_pricing
+                  valueBoolean: true
+        - insert:
+            tableName: categories
+            columns:
+              - column:
+                  name: organization_id
+                  value: "2"
+              - column:
+                  name: name
+                  value: Shotid
+              - column:
+                  name: dynamic_pricing
+                  valueBoolean: true
+        - insert:
+            tableName: categories
+            columns:
+              - column:
+                  name: organization_id
+                  value: "2"
+              - column:
+                  name: name
+                  value: Alkovaba
+              - column:
+                  name: dynamic_pricing
+                  valueBoolean: false
+        - insert:
+            tableName: categories
+            columns:
+              - column:
+                  name: organization_id
+                  value: "2"
+              - column:
+                  name: name
+                  value: Longerod
+              - column:
+                  name: dynamic_pricing
+                  valueBoolean: true
+
+        # Tooted – Kokteilid
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Vodka Red Bull', 'Vodka kokteil energijoogiga', 5.00, 4.50, 7.50
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Kokteilid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Vodka Sprite', 'Vodka kokteil Sprite’iga', 5.00, 4.60, 7.50
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Kokteilid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Gin Tonic', 'Klassikaline džinn toonikuga', 5.00, 4.50, 7.50
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Kokteilid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Energeetik (Ras gin)', 'Gin + energiajook', 5.00, 3.50, 7.50
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Kokteilid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Vodka Juice', 'Vodka mahlaga', 5.00, 4.50, 7.50
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Kokteilid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Skinny Lioness', 'Kergem kokteilivariant', 5.00, 4.50, 7.50
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Kokteilid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Pink Lemonade', 'Roosa sidrunilimonaadi kokteil', 5.00, 4.50, 7.50
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Kokteilid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Džunglikuningas (rum + cola)', 'Rumm koolaga', 5.00, 4.50, 7.50
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Kokteilid';
+
+        # Tooted – Alkovaba (ilma alkoholita kokteilid, karastusjoogid, mahlad, 0% longero)
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Kihisev panda', 'Ilma alkoholita kokteil', 3.00, 3.00, 4.00
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Alkovaba';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Cola', 'Karastusjook', 3.00, NULL, NULL
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Alkovaba';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Sprite', 'Karastusjook', 3.00, NULL, NULL
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Alkovaba';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Red Bull', 'Energeetiline jook', 4.00, NULL, NULL
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Alkovaba';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Red Bull Suhkruvaba', 'Energeetiline jook (suhkruvaba)', 4.00, NULL, NULL
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Alkovaba';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Red Bull Ice Edition', 'Energeetiline jook Ice Edition', 4.00, NULL, NULL
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Alkovaba';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Red Bull Peach Edition', 'Energeetiline jook Peach Edition', 4.00, NULL, NULL
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Alkovaba';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Jõhvikamahl (klaas)', 'Jõhvikamahl klaasis', 2.50, NULL, NULL
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Alkovaba';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Apelsinimahl (klaas)', 'Apelsinimahl klaasis', 2.50, NULL, NULL
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Alkovaba';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Alkovaba Longero', '0% longero', 4.00, NULL, 5.00
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Alkovaba';
+
+        # Tooted – Shotid
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Error 404', 'Maja shott', 4.50, 4.00, 9.00
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Shotid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Punane orav / Red Squirrel', 'Punane shott', 3.50, 3.00, 4.50
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Shotid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Viin 4 cl', 'Viinashott 4 cl', 3.50, 3.00, 4.50
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Shotid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Tekiila hele 4 cl', 'Hele tekiila 4 cl', 4.50, 4.00, 6.00
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Shotid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Fireball 4 cl', 'Fireball kaneeliliköör 4 cl', 4.00, 3.00, 5.00
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Shotid';
+
+        # Tooted – Longerod (sh Alexander)
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'ALC Long Greip', 'Greibi maitseline longero', 4.00, 3.00, 4.00
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Longerod';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'ALC Long Tropic', 'Troopilise maitsega longero', 4.00, 3.50, 5.00
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Longerod';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'ALC Long Citrus', 'Tsitruseline longero', 4.00, 3.50, 5.00
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Longerod';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'ALE Long Passion', 'Passioni maitseline longero', 4.00, 4.00, 5.00
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Longerod';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 2, c.id, 'Alexander shot (kohver)', 'Alexander õlu shoti kujul, arveldatakse longerona', 4.00, 3.00, 5.00
+              FROM categories c WHERE c.organization_id = 2 AND c.name = 'Longerod';
+
+        # Inventari algseis – Kokteilid
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 120 FROM products p WHERE p.organization_id = 2 AND p.name = 'Vodka Red Bull';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 120 FROM products p WHERE p.organization_id = 2 AND p.name = 'Vodka Sprite';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 120 FROM products p WHERE p.organization_id = 2 AND p.name = 'Gin Tonic';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 120 FROM products p WHERE p.organization_id = 2 AND p.name = 'Energeetik (Ras gin)';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 120 FROM products p WHERE p.organization_id = 2 AND p.name = 'Vodka Juice';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 100 FROM products p WHERE p.organization_id = 2 AND p.name = 'Skinny Lioness';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 100 FROM products p WHERE p.organization_id = 2 AND p.name = 'Pink Lemonade';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 120 FROM products p WHERE p.organization_id = 2 AND p.name = 'Džunglikuningas (rum + cola)';
+
+        # Inventari algseis – Alkovaba
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 80 FROM products p WHERE p.organization_id = 2 AND p.name = 'Kihisev panda';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 300 FROM products p WHERE p.organization_id = 2 AND p.name = 'Cola';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 300 FROM products p WHERE p.organization_id = 2 AND p.name = 'Sprite';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 250 FROM products p WHERE p.organization_id = 2 AND p.name = 'Red Bull';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 200 FROM products p WHERE p.organization_id = 2 AND p.name = 'Red Bull Suhkruvaba';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 150 FROM products p WHERE p.organization_id = 2 AND p.name = 'Red Bull Ice Edition';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 150 FROM products p WHERE p.organization_id = 2 AND p.name = 'Red Bull Peach Edition';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 100 FROM products p WHERE p.organization_id = 2 AND p.name = 'Jõhvikamahl (klaas)';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 100 FROM products p WHERE p.organization_id = 2 AND p.name = 'Apelsinimahl (klaas)';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 80 FROM products p WHERE p.organization_id = 2 AND p.name = 'Alkovaba Longero';
+
+        # Inventari algseis – Shotid
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 200 FROM products p WHERE p.organization_id = 2 AND p.name = 'Error 404';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 180 FROM products p WHERE p.organization_id = 2 AND p.name = 'Punane orav / Red Squirrel';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 500 FROM products p WHERE p.organization_id = 2 AND p.name = 'Viin 4 cl';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 150 FROM products p WHERE p.organization_id = 2 AND p.name = 'Tekiila hele 4 cl';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 150 FROM products p WHERE p.organization_id = 2 AND p.name = 'Fireball 4 cl';
+
+        # Inventari algseis – Longerod
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 180 FROM products p WHERE p.organization_id = 2 AND p.name = 'ALC Long Greip';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 180 FROM products p WHERE p.organization_id = 2 AND p.name = 'ALC Long Tropic';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 180 FROM products p WHERE p.organization_id = 2 AND p.name = 'ALC Long Citrus';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 150 FROM products p WHERE p.organization_id = 2 AND p.name = 'ALE Long Passion';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 2, p.id, 120 FROM products p WHERE p.organization_id = 2 AND p.name = 'Alexander shot (kohver)';
+
+  - changeSet:
+      id: 011-modify-inventory-add-adjusted-price
+      author: kris
+      changes:
+        - addColumn:
+            tableName: inventory
+            columns:
+              - column:
+                  name: adjusted_price
+                  type: DECIMAL(19,4)
+                  remarks: "Optional override of current effective price for this inventory record"
+      rollback:
+        - dropColumn:
+            tableName: inventory
+            columnName: adjusted_price
+
+  - changeSet:
+      id: 012-modify-inventory-transactions-add-price-before-after
+      author: kris
+      changes:
+        - addColumn:
+            tableName: inventory_transactions
+            columns:
+              - column:
+                  name: price_before
+                  type: DECIMAL(19,4)
+                  defaultValueNumeric: 0
+                  remarks: "Unit price in effect before the transaction"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price_after
+                  type: DECIMAL(19,4)
+                  defaultValueNumeric: 0
+                  remarks: "Unit price in effect after the transaction"
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: inventory_transactions
+            columnName: price_after
+        - dropColumn:
+            tableName: inventory_transactions
+            columnName: price_before
+
+  - changeSet:
+      id: 013-create-bar-stations
+      author: fred
+      changes:
+        - createTable:
+            tableName: bar_stations
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_bar_stations
+              - column:
+                  name: organization_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: CITEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: CURRENT_TIMESTAMP
+        - addForeignKeyConstraint:
+            baseTableName: bar_stations
+            baseColumnNames: organization_id
+            constraintName: fk_bar_stations_org
+            referencedTableName: organizations
+            referencedColumnNames: id
+            onDelete: RESTRICT
+            onUpdate: RESTRICT
+        - addUniqueConstraint:
+            tableName: bar_stations
+            columnNames: organization_id, name
+            constraintName: uk_bar_stations_org_name
+        - createIndex:
+            tableName: bar_stations
+            indexName: idx_bar_stations_org
+            columns:
+              - column:
+                  name: organization_id
+        - createTable:
+            tableName: user_bar_stations
+            columns:
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: bar_station_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: user_bar_stations
+            columnNames: user_id, bar_station_id
+            constraintName: pk_user_bar_stations
+        - addForeignKeyConstraint:
+            baseTableName: user_bar_stations
+            baseColumnNames: user_id
+            constraintName: fk_user_bar_stations_user
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: user_bar_stations
+            baseColumnNames: bar_station_id
+            constraintName: fk_user_bar_stations_station
+            referencedTableName: bar_stations
+            referencedColumnNames: id
+            onDelete: CASCADE
+            onUpdate: RESTRICT
+        - createIndex:
+            tableName: user_bar_stations
+            indexName: idx_user_bar_stations_user
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            tableName: user_bar_stations
+            indexName: idx_user_bar_stations_station
+            columns:
+              - column:
+                  name: bar_station_id
+        - addColumn:
+            tableName: inventory_transactions
+            columns:
+              - column:
+                  name: bar_station_id
+                  type: BIGINT
+                  remarks: "The bar station where this transaction occurred"
+        - addForeignKeyConstraint:
+            baseTableName: inventory_transactions
+            baseColumnNames: bar_station_id
+            constraintName: fk_inventory_trans_bar_station
+            referencedTableName: bar_stations
+            referencedColumnNames: id
+            onDelete: SET NULL
+            onUpdate: RESTRICT
+
+  - changeSet:
+      id: 014-add-price-increase-decrease-steps-to-organizations
+      author: arto
+      changes:
+        - addColumn:
+            tableName: organizations
+            columns:
+              - column:
+                  name: price_increase_step
+                  type: DECIMAL(19,4)
+                  defaultValueNumeric: 0.50
+                  remarks: "Default price increase step for products in this organization"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price_decrease_step
+                  type: DECIMAL(19,4)
+                  defaultValueNumeric: 0.50
+                  remarks: "Default price decrease step for products in this organization"
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            columnName: price_increase_step
+            tableName: organizations
+        - dropColumn:
+            columnName: price_decrease_step
+            tableName: organizations
