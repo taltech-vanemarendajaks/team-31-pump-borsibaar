@@ -6,7 +6,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,9 +14,9 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
-import { SortingIcon } from "@/components/ui/sorting";
+import { SortDirection, SortingIcon } from "@/components/ui/sorting";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
@@ -29,7 +29,7 @@ import {
   Plus,
   Search,
   Trash,
-  User,
+  User
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -51,8 +51,8 @@ interface InventoryTransactionResponseDto {
 export const dynamic = "force-dynamic";
 
 type SortState = {
-  key: string
-  direction: "asc" | "desc"
+  key: string;
+  direction: SortDirection;
 }
 
 type ColumnHeaderProps = {
@@ -127,7 +127,7 @@ export default function Inventory() {
   });
   const [sort, setSort] = useState<SortState>({
     key: "",
-    direction: "asc",
+    direction: "asc"
   });
 
   useEffect(() => {
