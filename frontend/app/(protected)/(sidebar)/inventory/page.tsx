@@ -63,7 +63,7 @@ type ColumnHeaderProps = {
   align?: "left" | "center" | "right";
 }
 
-function ColumnHeader ({ label, sortKey, sort, onSort, align = "left" }: ColumnHeaderProps) {
+function ColumnHeader({ label, sortKey, sort, onSort, align = "left" }: ColumnHeaderProps) {
   const sortable = !!sortKey && !!sort && !!onSort;
   const active = sortable && sort.key === sortKey;
   return (
