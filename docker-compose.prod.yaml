@@ -45,8 +45,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      BACKEND_URL: https://team31.sk0ut.dev/api/
-      NEXT_PUBLIC_BACKEND_URL: https://team31.sk0ut.dev/api/
+      BACKEND_URL: https://team31.sk0ut.dev/
+      NEXT_PUBLIC_BACKEND_URL: https://team31.sk0ut.dev/
     restart: unless-stopped
     depends_on:
       - backend
