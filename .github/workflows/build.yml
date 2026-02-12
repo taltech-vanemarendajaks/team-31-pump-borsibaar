@@ -57,7 +57,7 @@ jobs:
       contents: read
       packages: write
 
-    needs: build-backend
+    needs: [build-backend, build-frontend]
 
     steps:
       - uses: actions/checkout@v4
