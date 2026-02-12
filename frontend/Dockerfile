@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-ENV NEXT_PUBLIC_BACKEND_URL=https://team31.sk0ut.dev/api
+ENV NEXT_PUBLIC_BACKEND_URL=https://team31.sk0ut.dev
 
 # Install dependencies
 COPY package.json package-lock.json ./
@@ -23,8 +23,8 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/static ./.next/static
 
-ENV BACKEND_URL=https://team31.sk0ut.dev/api
-ENV NEXT_PUBLIC_BACKEND_URL=https://team31.sk0ut.dev/api
+ENV BACKEND_URL=https://team31.sk0ut.dev
+ENV NEXT_PUBLIC_BACKEND_URL=https://team31.sk0ut.dev
 
 ENV HOSTNAME=0.0.0.0
 EXPOSE 3000
