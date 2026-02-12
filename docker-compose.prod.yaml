@@ -12,8 +12,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
-    networks:
-      - borsibaar-network
     secrets:
       - postgres_password
       - postgres_user
@@ -30,17 +28,11 @@ services:
     depends_on:
       - postgres
     restart: unless-stopped
-    networks:
-      - borsibaar-network
     secrets:
       - postgres_db
 
 volumes:
   postgres_data:
-
-networks:
-  borsibaar-network:
-    driver: bridge
 
 secrets:
   postgres_user: 
