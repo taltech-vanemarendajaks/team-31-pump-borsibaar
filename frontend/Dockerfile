@@ -25,6 +25,9 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/static ./.next/static
 
+ENV BACKEND_URL=https://team31.sk0ut.dev/api/
+ENV NEXT_PUBLIC_BACKEND_URL=https://team31.sk0ut.dev/api/
+
 ENV HOSTNAME=0.0.0.0
 EXPOSE 3000
 
