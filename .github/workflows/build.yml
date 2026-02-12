@@ -27,7 +27,28 @@ jobs:
 
       - name: Push Docker image
         run: docker push ghcr.io/${{ github.repository_owner }}/team31-borsibaar-backend:latest
-        
+
+  build-frontend:
+    name: Frontend Build
+    runs-on: self-hosted
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Docker image
+        working-directory: ./frontend
+        run: docker build -t ghcr.io/${{ github.repository_owner }}/team31-borsibaar-frontend:latest .
+
+      - name: Push Docker image
+        run: docker push ghcr.io/${{ github.repository_owner }}/team31-borsibaar-frontend:latest
+
   deploy-services:
     name: Deploy Services
     runs-on: self-hosted

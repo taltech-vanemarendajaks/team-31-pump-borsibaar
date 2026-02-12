@@ -40,6 +40,17 @@ services:
       - google_client_id
       - google_client_secret
 
+  frontend:
+    image: ghcr.io/taltech-vanemarendajaks/team31-borsibaar-frontend:latest  
+    ports:
+      - "3000:3000"
+    environment:
+      BACKEND_URL: https://team31.sk0ut.dev/api/
+      NEXT_PUBLIC_BACKEND_URL: https://team31.sk0ut.dev/api/
+    restart: unless-stopped
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
 
