@@ -1,12 +1,24 @@
 FROM eclipse-temurin:21-jdk AS build
-WORKDIR /home/ubuntu/actions-runner/_work/team-31-pump-borsibaar/team-31-pump-borsibaar/backend
 
-RUN ls
-RUN pwd
-RUN whoami
+WORKDIR /app
 
+# Copy everything from current directory into the container
+COPY . .
+
+# Make sure mvnw is executable (important on Linux containers)
+RUN chmod +x mvnw
+
+# Build the application
 RUN ./mvnw clean package -DskipTests
-COPY target/*.jar app.jar
+
+# Use a smaller runtime image (recommended)
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+# Copy the built jar from the build stage
+COPY --from=build /app/target/*.jar app.jar
+
+EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
-EXPOSE 8080
