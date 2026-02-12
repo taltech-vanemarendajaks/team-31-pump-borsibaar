@@ -14,11 +14,13 @@ services:
     restart: unless-stopped
     networks:
       - borsibaar-network
+    secrets:
+      - postgres_password
+      - postgres_user
+      - postgres_db
 
   backend:
-    build:
-      context: backend
-      dockerfile: Dockerfile
+    image: borsibaar-backend:latest
     container_name: borsibaar-backend
     expose:
       - "8080"
@@ -55,24 +57,7 @@ services:
       - backend
     networks:
       - borsibaar-network
-
-  nginx:
-    image: nginx:alpine
-    container_name: borsibaar-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - frontend
-      - backend
-    restart: unless-stopped
-    networks:
-      - borsibaar-network
-
+      
 volumes:
   postgres_data:
 
