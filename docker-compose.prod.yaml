@@ -21,14 +21,24 @@ services:
     expose:
       - "8080"
     environment:
+      SPRING_DATASOURCE_USERNAME_FILE: /run/secrets/postgres_user
+      SPRING_DATASOURCE_PASSWORD_FILE: /run/secrets/postgres_password
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      GOOGLE_CLIENT_ID_FILE: /run/secrets/google_client_id
+      GOOGLE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret
       APP_FRONTEND_URL: ${APP_FRONTEND_URL}
     depends_on:
       - postgres
     restart: unless-stopped
     secrets:
+      - postgres_user
+      - postgres_password
       - postgres_db
       - jwt_secret
+      - google_client_id
+      - google_client_secret
 
 volumes:
   postgres_data:
