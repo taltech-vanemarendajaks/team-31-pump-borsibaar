@@ -2,9 +2,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Accept build argument for public backend URL
-ARG NEXT_PUBLIC_BACKEND_URL
-ENV NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
+ENV NEXT_PUBLIC_BACKEND_URL=https://team31.sk0ut.dev/api/
 
 # Install dependencies
 COPY package.json package-lock.json ./
