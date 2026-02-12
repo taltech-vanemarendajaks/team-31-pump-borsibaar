@@ -28,6 +28,7 @@ services:
     restart: unless-stopped
     secrets:
       - postgres_db
+      - jwt_secret
 
 volumes:
   postgres_data:
@@ -38,4 +39,6 @@ secrets:
   postgres_password:
     external: true 
   postgres_db:
+    external: true
+  jwt_secret:
     external: true
