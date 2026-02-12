@@ -27,3 +27,22 @@ jobs:
 
       - name: Push Docker image
         run: docker push ghcr.io/${{ github.repository_owner }}/team31-borsibaar-backend:latest
+        
+  deploy-services:
+    name: Deploy Services
+    runs-on: self-hosted
+
+    permissions:
+      contents: read
+      packages: write
+
+    needs: build-backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Deploy with Docker Compose
+        run: docker stack deploy -c docker-compose.prod.yaml borsibaar --with-registry-auth
