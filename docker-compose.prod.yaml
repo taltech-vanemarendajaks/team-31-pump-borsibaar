@@ -41,3 +41,11 @@ volumes:
 networks:
   borsibaar-network:
     driver: bridge
+
+secrets:
+  postgres_user: 
+    external: true
+  postgres_password:
+    external: true 
+  postgres_db:
+    external: true
