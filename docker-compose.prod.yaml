@@ -20,12 +20,10 @@ services:
       - postgres_db
 
   backend:
-    image: borsibaar-backend:latest
+    image: team31-borsibaar-backend:latest
     container_name: borsibaar-backend
     expose:
       - "8080"
-    env_file:
-      - .env
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       APP_FRONTEND_URL: ${APP_FRONTEND_URL}
@@ -35,28 +33,7 @@ services:
     networks:
       - borsibaar-network
     secrets:
-      - postgres_password
-
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-      args:
-        # Build-time variable for client-side OAuth redirects (now through nginx)
-        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
-    container_name: borsibaar-frontend
-    expose:
-      - "3000"
-    environment:
-      # Server-side: Use Docker network for internal communication
-      BACKEND_URL: http://backend:8080
-      # Client-side: Public URL for OAuth redirects (now through nginx)
-      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
-    restart: unless-stopped
-    depends_on:
-      - backend
-    networks:
-      - borsibaar-network
+      - postgres_db
 
 volumes:
   postgres_data:
