@@ -52,3 +52,7 @@ secrets:
     external: true
   jwt_secret:
     external: true
+  google_client_id:
+    external: true
+  google_client_secret:
+    external: true
