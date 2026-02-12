@@ -23,7 +23,7 @@ jobs:
 
       - name: Build Docker image
         working-directory: ./backend
-        run: docker build -t ghcr.io/${{ github.repository_owner }}/borsibaar-backend:latest .
+        run: docker build -t ghcr.io/${{ github.repository_owner }}/team31-borsibaar-backend:latest .
 
       - name: Push Docker image
-        run: docker push ghcr.io/${{ github.repository_owner }}/borsibaar-backend:latest
+        run: docker push ghcr.io/${{ github.repository_owner }}/team31-borsibaar-backend:latest
