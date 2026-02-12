@@ -17,7 +17,7 @@ services:
       - postgres_db
 
   backend:
-    image: team31-borsibaar-backend:latest
+    image: ghcr.io/${{ github.repository_owner }}/team31-borsibaar-backend:latest
     expose:
       - "8080"
     environment:
