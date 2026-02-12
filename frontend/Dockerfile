@@ -2,16 +2,14 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Accept build argument for public backend URL
-ARG NEXT_PUBLIC_BACKEND_URL
-ENV NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
+ENV NEXT_PUBLIC_BACKEND_URL=https://team31.sk0ut.dev
 
 # Install dependencies
-COPY frontend/package.json frontend/package-lock.json ./
+COPY package.json package-lock.json ./
 RUN npm ci
 
 # Copy source and build
-COPY frontend/ .
+COPY . .
 # Next.js picks NEXT_PUBLIC_* client vars at build time
 RUN npm run build
 
@@ -25,5 +23,10 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/static ./.next/static
 
+ENV BACKEND_URL=https://team31.sk0ut.dev
+ENV NEXT_PUBLIC_BACKEND_URL=https://team31.sk0ut.dev
+
+ENV HOSTNAME=0.0.0.0
 EXPOSE 3000
+
 CMD ["node", "server.js"]
