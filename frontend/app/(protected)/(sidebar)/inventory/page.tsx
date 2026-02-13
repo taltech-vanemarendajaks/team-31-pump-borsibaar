@@ -1,18 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { SortDirection, SortingIcon } from "@/components/ui/sorting";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import {
   AlertCircle,
   Edit,
+  History,
+  ListPlus,
   Minus,
   Package,
   Plus,
   Search,
-  History,
-  User,
-  ListPlus,
   Trash,
+  User
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 interface InventoryTransactionResponseDto {
   id: number;
@@ -28,25 +47,46 @@ interface InventoryTransactionResponseDto {
   createdByEmail?: string;
   createdAt: string;
 }
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
+
+type SortState = {
+  key: string;
+  direction: SortDirection;
+}
+
+type ColumnHeaderProps = {
+  label: string;
+  sortKey?: string;
+  sort?: SortState;
+  onSort?: (key: string) => void;
+  align?: "left" | "center" | "right";
+}
+
+function ColumnHeader({ label, sortKey, sort, onSort, align = "left" }: ColumnHeaderProps) {
+  const sortable = !!sortKey && !!sort && !!onSort;
+  const active = sortable && sort.key === sortKey;
+  return (
+    <th
+      onClick={sortable ? () => onSort(sortKey) : undefined}
+      className={cn(
+        "py-3 px-4 font-semibold text-gray-300",
+        sortable && "cursor-pointer"
+      )}
+    >
+      <div className={cn(
+        "flex items-center gap-2",
+        align === "center" && "justify-center",
+        align === "right" && "justify-end"
+      )}>
+        {label}
+        {sortable && (
+          <SortingIcon active={active} direction={sort.direction} />
+        )}
+      </div>
+    </th>
+  )
+}
 
 export default function Inventory() {
   const [inventory, setInventory] = useState([]);
@@ -84,6 +124,10 @@ export default function Inventory() {
     maxPrice: "",
     initialQuantity: "",
     notes: "",
+  });
+  const [sort, setSort] = useState<SortState>({
+    key: "",
+    direction: "asc"
   });
 
   useEffect(() => {
@@ -352,6 +396,22 @@ export default function Inventory() {
     }
   }
 
+  const handleSort = (key: string) => {
+    if (!key) return;
+    setSort(prev => {
+      if (prev.key === key) {
+        return {
+          key,
+          direction: prev.direction === "asc" ? "desc" : "asc"
+        }
+      }
+      return {
+        key,
+        direction: "asc"
+      }
+    })
+  }
+
   const closeModals = () => {
     setShowAddModal(false);
     setShowRemoveModal(false);
@@ -396,12 +456,37 @@ export default function Inventory() {
     setShowHistoryModal(true);
     await fetchTransactionHistory(item.productId);
   };
-
-  const filteredInventory = searchTerm?.trim().length > 0 ? inventory.filter((item) => {
-    // @ts-expect-error: types aren't imported currently from backend
-    return item.productName.toLowerCase().includes(searchTerm.toLowerCase())
-  }
-  ) : inventory;
+  
+  const filteredInventory = useMemo(() => {
+    const filteredBySearch = searchTerm?.trim().length > 0 ?
+      // @ts-expect-error: types aren't imported currently from backend
+      inventory.filter(item => item.productName.toLowerCase().includes(searchTerm.toLowerCase())) :
+      inventory;
+    if (!sort.key) {
+      return filteredBySearch;
+    }
+    return [...filteredBySearch].sort((a, b) => {
+      if (sort.key === "status") {
+        // @ts-expect-error: types aren't imported currently from backend
+        const quantityA = parseFloat(a?.quantity);
+        // @ts-expect-error: types aren't imported currently from backend
+        const quantityB = parseFloat(b?.quantity);
+        const statusA = quantityA === 0 ? 0 : quantityA < 10 ? 1 : 2;
+        const statusB = quantityB === 0 ? 0 : quantityB < 10 ? 1 : 2;
+        const statusComparison = statusA - statusB;
+        return sort.direction === "asc" ? statusComparison : -statusComparison;
+      }
+      const firstSortValue = a?.[sort.key];
+      const secondSortValue = b?.[sort.key];
+      let comparisonResult = 0;
+      if (firstSortValue > secondSortValue) {
+        comparisonResult = 1;
+      } else if (firstSortValue < secondSortValue) {
+        comparisonResult = -1;
+      }
+      return sort.direction === "asc" ? comparisonResult : -comparisonResult;
+    });
+  }, [inventory, searchTerm, sort]);
 
   // @ts-expect-error: types aren't imported currently from backend
   const getStockStatus = (quantity) => {
@@ -481,30 +566,14 @@ export default function Inventory() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-400">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-300">
-                    Product
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-300">
-                    Current Price
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-300">
-                    Min Price
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-300">
-                    Max Price
-                  </th>
-                  <th className="text-center py-3 px-4 font-semibold text-gray-300">
-                    Quantity
-                  </th>
-                  <th className="text-center py-3 px-4 font-semibold text-gray-300">
-                    Status
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-300">
-                    Last Updated
-                  </th>
-                  <th className="text-center py-3 px-4 font-semibold text-gray-300">
-                    Actions
-                  </th>
+                  <ColumnHeader label="Product" sortKey="productName" sort={sort} onSort={handleSort} />
+                  <ColumnHeader label="Current Price" sortKey="basePrice" sort={sort} onSort={handleSort} align="center" />
+                  <ColumnHeader label="Min Price" sortKey="minPrice" sort={sort} onSort={handleSort} align="center" />
+                  <ColumnHeader label="Max Price" sortKey="maxPrice" sort={sort} onSort={handleSort} align="center" />
+                  <ColumnHeader label="Quantity" sortKey="quantity" sort={sort} onSort={handleSort} align="center" />
+                  <ColumnHeader label="Status" sortKey="status" sort={sort} onSort={handleSort} align="center" />
+                  <ColumnHeader label="Last Updated" sortKey="updatedAt" sort={sort} onSort={handleSort} />
+                  <ColumnHeader label="Actions" align="center" />
                 </tr>
               </thead>
               <tbody>
